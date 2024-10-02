@@ -1,12 +1,26 @@
 package com.maekotech.smartattendancesystem;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.converter.scalars.ScalarsConverterFactory;
+import retrofit2.http.Body;
+import retrofit2.http.POST;
 
 public class FormActivity extends AppCompatActivity {
 
@@ -15,6 +29,11 @@ public class FormActivity extends AppCompatActivity {
     private EditText emailEditText;
     private EditText notesEditText;
     private Button buttonSubmit;
+
+    interface ContactApi {
+        @POST("/contact-form/")
+        Call<String> submitContactForm(@Body ContactRequest contactRequest);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,15 +46,32 @@ public class FormActivity extends AppCompatActivity {
         notesEditText = findViewById(R.id.notesEditText);
         buttonSubmit = findViewById(R.id.submitButton);
 
-        buttonSubmit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                submitForm();
-            }
-        });
+        // Set up Gson with lenient mode
+        Gson gson = new GsonBuilder().setLenient().create();
+
+        // Set up logging interceptor for debugging
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+
+        // OkHttpClient with logging
+        OkHttpClient client = new OkHttpClient.Builder()
+                .addInterceptor(loggingInterceptor)
+                .build();
+
+        // Retrofit instance
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://192.168.29.18:8080")
+                .client(client)
+                .addConverterFactory(ScalarsConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .build();
+
+        ContactApi contactApi = retrofit.create(ContactApi.class);
+
+        buttonSubmit.setOnClickListener(v -> submitForm(contactApi));
     }
 
-    private void submitForm() {
+    private void submitForm(ContactApi contactApi) {
         String firstName = firstNameEditText.getText().toString().trim();
         String lastName = lastNameEditText.getText().toString().trim();
         String email = emailEditText.getText().toString().trim();
@@ -43,9 +79,46 @@ public class FormActivity extends AppCompatActivity {
 
         if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || notes.isEmpty()) {
             Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
-        } else {
-            // Handle the form submission, e.g., sending to a server
-            Toast.makeText(this, "Submitted:\nName: " + firstName + " " + lastName + "\nEmail: " + email + "\nNotes: " + notes, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        ContactRequest contactRequest = new ContactRequest(firstName, lastName, email, notes);
+        contactApi.submitContactForm(contactRequest).enqueue(new Callback<String>() {
+            @Override
+            public void onResponse(Call<String> call, Response<String> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(FormActivity.this, "Form submitted successfully!", Toast.LENGTH_SHORT).show();
+
+                    // Navigate to MainActivity after successful form submission
+                    Intent intent = new Intent(FormActivity.this, MainActivity.class);
+                    startActivity(intent);
+
+                    // Optionally, finish this activity so it cannot be navigated back to
+                    finish();
+
+                } else {
+                    Toast.makeText(FormActivity.this, "Failed to submit form: " + response.message(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<String> call, Throwable t) {
+                Toast.makeText(FormActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    public static class ContactRequest {
+        private String firstName;
+        private String lastName;
+        private String email;
+        private String notes;
+
+        public ContactRequest(String firstName, String lastName, String email, String notes) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.email = email;
+            this.notes = notes;
         }
     }
 }

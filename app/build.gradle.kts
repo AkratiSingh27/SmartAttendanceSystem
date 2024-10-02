@@ -32,30 +32,54 @@ android {
 }
 
 dependencies {
-
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+
+    // Test dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
-    //Add cameraX and ml-kit dependancies
-    implementation ("androidx.camera:camera-core:1.1.0-beta02")
+    // CameraX dependencies
+    implementation("androidx.camera:camera-core:1.1.0-beta02")
+    implementation("androidx.camera:camera-camera2:1.1.0-beta02")
+    implementation("androidx.camera:camera-lifecycle:1.1.0-beta02")
+    implementation("androidx.camera:camera-video:1.1.0-beta02")
+    implementation("androidx.camera:camera-view:1.1.0-beta02")
+    implementation("androidx.camera:camera-extensions:1.1.0-beta02")
 
-    implementation ("androidx.camera:camera-camera2:1.1.0-beta02")
+    // Barcode scanning
+    implementation("com.google.mlkit:barcode-scanning:16.1.0")
 
-    implementation ("androidx.camera:camera-lifecycle:1.1.0-beta02")
+    // ZXing dependencies
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("com.google.zxing:core:3.4.1")
 
-    implementation ("androidx.camera:camera-video:1.1.0-beta02")
+    // Retrofit dependencies
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
-    implementation ("androidx.camera:camera-view:1.1.0-beta02")
+    // OkHttp dependency
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
 
-    implementation ("androidx.camera:camera-extensions:1.1.0-beta02")
-    implementation ("com.google.mlkit:barcode-scanning:16.1.0")
-    implementation ("com.journeyapps:zxing-android-embedded:4.3.0")
-    implementation ("com.google.zxing:core:3.4.1")
+    // Gson dependency
+    implementation("com.google.code.gson:gson:2.8.9")
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.1")
 
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("com.squareup.okhttp3:okhttp:4.9.0")
+
+    // Scalars converter for handling plain text responses
+    implementation ("com.squareup.retrofit2:converter-scalars:2.9.0")
+
+    implementation ("com.android.volley:volley:1.2.1")
+
+    implementation ("androidx.camera:camera-core:1.0.0")
+    implementation ("androidx.camera:camera-camera2:1.0.0")
+    implementation ("androidx.camera:camera-lifecycle:1.0.0")
+    implementation ("androidx.camera:camera-view:1.0.0")
 
 }

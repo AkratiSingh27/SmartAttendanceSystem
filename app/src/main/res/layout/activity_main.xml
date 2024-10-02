@@ -9,8 +9,14 @@
         android:layout_marginStart="25dp"
         android:layout_marginEnd="25dp"
         android:layout_height="380dp"
-        android:layout_marginTop="50dp" />
+        android:layout_marginTop="50dp" >
 
+<!--        <View-->
+<!--            android:layout_width="300dp"-->
+<!--            android:layout_height="300dp"-->
+<!--            android:layout_gravity="center"-->
+<!--            android:background="@drawable/scanner_frame" />-->
+    </androidx.camera.view.PreviewView>
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
@@ -25,7 +31,7 @@
         android:clickable="true"
         android:focusable="true"
         android:padding="16dp"
-        android:text=" Contact Us"
+        android:text="Contact Us"
         android:textColor="#000000"
         android:textSize="18sp" />
 
@@ -42,8 +48,20 @@
         android:background="?attr/selectableItemBackground"
         android:focusable="true"
         android:padding="16dp"
-        android:text="Facing Any Issues ?"
+        android:text="Facing Any Issues?"
         android:textColor="#000000"
         android:textSize="18sp" />
+
+    <!-- TextView for Device ID -->
+<!--    <TextView-->
+<!--        android:id="@+id/deviceIdTextView"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_below="@id/cameraPreview"-->
+<!--        android:layout_marginTop="20dp"-->
+<!--        android:layout_centerHorizontal="true"-->
+<!--        android:text="Device ID will be shown here"-->
+<!--        android:textSize="16sp"-->
+<!--        android:textColor="#000000" />-->
 
 </RelativeLayout>
