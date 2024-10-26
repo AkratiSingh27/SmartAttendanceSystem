@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">SmartAttendanceSystem</string>
+    <string name="welcome">Welcome</string>
+    <string name="employeeName">EmployeeName</string>
+    <string name="in">In</string>
+    <string name="out">out</string>
 </resources>
