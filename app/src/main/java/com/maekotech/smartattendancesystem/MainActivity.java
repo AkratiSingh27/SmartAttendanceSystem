@@ -144,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
 
             // After a successful scan, check Device ID
             checkDeviceIdWithServer(scanResult);
+            isScanning = false; // Stop further scans
 
         } catch (Exception e) {
             Log.e("CameraX", "Scan failed: " + e.getMessage());
