@@ -3,52 +3,45 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/cameraPreview"
-        android:layout_width="match_parent"
-        android:layout_marginStart="25dp"
-        android:layout_marginEnd="25dp"
-        android:layout_height="380dp"
-        android:layout_marginTop="50dp" >
-    </androidx.camera.view.PreviewView>
-    <TextView
-        android:id="@+id/textView"
+    <!-- QR code Scanner View -->
+    <com.journeyapps.barcodescanner.BarcodeView
+        android:id="@+id/barcode_scanner"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="114dp"
-        android:layout_marginEnd="41dp"
-        android:layout_marginBottom="128dp"
-        android:background="?attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true"
-        android:padding="16dp"
-        android:text="Contact Us"
-        android:textColor="#000000"
-        android:textSize="18sp" />
+        android:layout_height="422dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginRight="20dp" />
 
+    <!-- Frame Around Scanner Area (Centered on BarcodeView) -->
+    <FrameLayout
+        android:id="@+id/scanner_frame"
+        android:layout_width="295dp"
+        android:layout_height="302dp"
+        android:layout_alignBottom="@id/barcode_scanner"
+        android:layout_centerInParent="true"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        android:layout_marginStart="76dp"
+        android:layout_marginTop="110dp"
+        android:layout_marginBottom="110dp"
+        android:background="@drawable/scanner_frame_background" />
+
+    <!-- Center TextView for "Contact Us" -->
     <TextView
         android:id="@+id/textView6"
-        android:layout_width="261dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="91dp"
-        android:layout_marginEnd="59dp"
-        android:layout_marginBottom="155dp"
-        android:background="?attr/selectableItemBackground"
-        android:focusable="true"
-        android:padding="16dp"
-        android:text="Facing Any Issues?"
-        android:textColor="#000000"
-        android:textSize="18sp" />
-
-    <TextView
-        android:id="@+id/deviceIdTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:visibility="gone" /> <!-- Hides the TextView -->
+        android:layout_alignBottom="@id/barcode_scanner"
+        android:layout_centerVertical="true"
+        android:layout_marginTop="90dp"
+        android:layout_marginBottom="-138dp"
+        android:background="?attr/selectableItemBackground"
+        android:focusable="true"
+        android:lineSpacingExtra="8dp"
+        android:padding="16dp"
+        android:layout_centerHorizontal="true"
+        android:text=" Facing Any Issues? \n Contact Us"
+        android:textColor="#0000FF"
+        android:textSize="18sp" />
+
 </RelativeLayout>

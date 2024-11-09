@@ -4,7 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.ImageFormat;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.SpannableString;
@@ -12,22 +12,16 @@ import android.text.style.UnderlineSpan;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageAnalysis;
-import androidx.camera.core.ImageProxy;
-import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.zxing.BinaryBitmap;
-import com.google.zxing.MultiFormatReader;
-import com.google.zxing.Result;
-import com.google.zxing.common.HybridBinarizer;
-import com.google.zxing.LuminanceSource;
+
+import com.journeyapps.barcodescanner.BarcodeView;
+import com.journeyapps.barcodescanner.BarcodeResult;
+import com.journeyapps.barcodescanner.BarcodeCallback;
+
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
@@ -35,27 +29,27 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutionException;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     private final String[] REQUIRED_PERMISSIONS = {Manifest.permission.CAMERA};
 
-    private PreviewView cameraPreview;
+    private BarcodeView barcodeView;
     private TextView textView;
     private boolean isScanning = false;
     private static final String PREFS_NAME = "MyPrefs";
-    private static final String CHECK_DEVICE_ID_URL = "http://192.168.29.18:8080/employee-actions/%s"; // Placeholder for Device ID
+    private static final String CHECK_DEVICE_ID_URL = "http://192.168.29.18:8080/employee-actions/%s";
+    private static final String TARGET_URL = "https://www.smartattendancesystem.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        cameraPreview = findViewById(R.id.cameraPreview);
-        textView = findViewById(R.id.textView);
+        barcodeView = findViewById(R.id.barcode_scanner);
+        textView = findViewById(R.id.textView6);
 
         setupContactUsText();
         requestPermissionsIfNeeded();
@@ -63,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupContactUsText() {
-        String contactUsText = " Contact Us";
+        String contactUsText = " Facing Any Issues?\nContact Us";
         SpannableString spannableString = new SpannableString(contactUsText);
         spannableString.setSpan(new UnderlineSpan(), 0, contactUsText.length(), 0);
         textView.setText(spannableString);
@@ -72,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void requestPermissionsIfNeeded() {
         if (allPermissionsGranted()) {
-            startCamera();
+            startScanner();
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
@@ -85,76 +79,43 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void startCamera() {
-        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
-        cameraProviderFuture.addListener(() -> {
-            try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                Preview preview = new Preview.Builder().build();
-                CameraSelector cameraSelector = new CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                        .build();
+    private void startScanner() {
+        if (barcodeView != null) {
+            barcodeView.decodeContinuous(new BarcodeCallback() {
+                @Override
+                public void barcodeResult(BarcodeResult result) {
+                    // This method will be called when a barcode is scanned
+                    if (isScanning) {
+                        String scanResult = result.getText();
 
-                preview.setSurfaceProvider(cameraPreview.getSurfaceProvider());
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview);
-                startImageAnalysis(cameraProvider, cameraSelector);
+                        // Check if the scan result matches the specific URL
+                        if (scanResult.equals(TARGET_URL)) {
+                            Toast.makeText(MainActivity.this, "Scan Result: " + scanResult, Toast.LENGTH_SHORT).show();
 
-            } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        }, ContextCompat.getMainExecutor(this));
-    }
+                            // After a successful scan, check Device ID
+                            checkDeviceIdWithServer(scanResult);
+                            isScanning = false; // Stop further scans
+                        } else {
+                            // If the scanned result doesn't match the URL, ignore and continue scanning
+                            Log.d("Scanner", "Scanned result is not the target URL. Continuing to scan...");
+                        }
+                    }
+                }
 
-    private void startImageAnalysis(ProcessCameraProvider cameraProvider, CameraSelector cameraSelector) {
-        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build();
+                @Override
+                public void possibleResultPoints(List<com.google.zxing.ResultPoint> resultPoints) {
+                    // Handle possible result points if needed (optional)
+                }
+            });
 
-        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this), image -> {
-            if (isScanning) {
-                analyzeImage(image);
-            }
-        });
-
-        cameraProvider.bindToLifecycle(this, cameraSelector, imageAnalysis);
-        isScanning = true; // Start automatic scanning
-    }
-
-    private void analyzeImage(ImageProxy image) {
-        if (image.getFormat() != ImageFormat.YUV_420_888) {
-            image.close();
-            return; // Only process YUV_420_888 images
-        }
-
-        // Get the image data
-        ImageProxy.PlaneProxy[] planes = image.getPlanes();
-        ByteBuffer buffer = planes[0].getBuffer();
-        byte[] data = new byte[buffer.remaining()];
-        buffer.get(data);
-
-        // Decode the image to a BinaryBitmap
-        LuminanceSource source = new MyLuminanceSource(data, image.getWidth(), image.getHeight());
-        BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-
-        try {
-            MultiFormatReader reader = new MultiFormatReader();
-            Result result = reader.decode(bitmap);
-            String scanResult = result.getText();
-            Toast.makeText(this, "Scan Result: " + scanResult, Toast.LENGTH_SHORT).show();
-
-            // After a successful scan, check Device ID
-            checkDeviceIdWithServer(scanResult);
-            isScanning = false; // Stop further scans
-
-        } catch (Exception e) {
-            Log.e("CameraX", "Scan failed: " + e.getMessage());
-        } finally {
-            image.close(); // Always close the image
+            // No need for setStatusText(), just resume scanning
+            barcodeView.resume(); // Start the scanning process
+            isScanning = true;
         }
     }
 
     private void checkDeviceIdWithServer(String scanResult) {
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        String deviceId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
         String url = String.format(CHECK_DEVICE_ID_URL, deviceId); // Insert Device ID into the URL
 
         OkHttpClient client = new OkHttpClient();
@@ -214,11 +175,38 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
-                startCamera();
+                startScanner(); // Permission granted, start the scanner
             } else {
-                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show();
-                finish();
+                // Check if the user has denied the permission permanently (clicked "Don't ask again")
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+                    // The user has denied the permission, but not permanently (they can still allow it)
+                    Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show();
+                } else {
+                    // The user has denied the permission permanently, prompt them to go to settings
+                    Toast.makeText(this, "Camera permission is required for this app. Please enable it in settings.", Toast.LENGTH_LONG).show();
+                    openAppSettings();
+                }
+                finish(); // Close the activity if permissions are not granted
             }
         }
+    }
+
+    private void openAppSettings() {
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        Uri uri = Uri.fromParts("package", getPackageName(), null);
+        intent.setData(uri);
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        barcodeView.pause(); // Pause the scanner when the activity is paused
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        barcodeView.resume(); // Resume the scanner when the activity is resumed
     }
 }

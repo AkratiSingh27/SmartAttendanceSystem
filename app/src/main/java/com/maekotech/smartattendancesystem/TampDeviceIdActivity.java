@@ -2,6 +2,7 @@ package com.maekotech.smartattendancesystem;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler; // Import Handler
 import android.provider.Settings;
@@ -66,6 +67,12 @@ public class TampDeviceIdActivity extends AppCompatActivity {
             return;
         }
 
+        // Check if this device has already submitted the information
+        if (hasDeviceAlreadySubmitted(deviceId)) {
+            Toast.makeText(this, "This device has already submitted information.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         String url = "http://192.168.29.18:8080/DeviceID-information/save"; // API URL
 
         // Create the JSON object to send
@@ -92,6 +99,9 @@ public class TampDeviceIdActivity extends AppCompatActivity {
                     public void onResponse(JSONObject response) {
                         // Show success message
                         Toast.makeText(TampDeviceIdActivity.this, "Device info submitted successfully!", Toast.LENGTH_SHORT).show();
+
+                        // Store the device ID to SharedPreferences to mark it as submitted
+                        saveDeviceSubmissionStatus(deviceId);
 
                         // Delay the transition to MainActivity
                         new Handler().postDelayed(new Runnable() {
@@ -120,5 +130,19 @@ public class TampDeviceIdActivity extends AppCompatActivity {
 
         // Add the request to the RequestQueue
         requestQueue.add(jsonObjectRequest);
+    }
+
+    // Check if the device has already submitted its info
+    private boolean hasDeviceAlreadySubmitted(String deviceId) {
+        SharedPreferences sharedPreferences = getSharedPreferences("DevicePrefs", MODE_PRIVATE);
+        return sharedPreferences.getBoolean(deviceId, false); // Returns true if submitted before
+    }
+
+    // Save the device ID to SharedPreferences to mark it as submitted
+    private void saveDeviceSubmissionStatus(String deviceId) {
+        SharedPreferences sharedPreferences = getSharedPreferences("DevicePrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(deviceId, true); // Mark this device as submitted
+        editor.apply();
     }
 }

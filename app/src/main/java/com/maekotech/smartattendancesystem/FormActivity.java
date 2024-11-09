@@ -8,6 +8,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import java.util.regex.Pattern;
+
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
@@ -27,6 +30,10 @@ public class FormActivity extends AppCompatActivity {
     private EditText notesEditText;
     private Button buttonSubmit;
 
+    // Define the email regex pattern
+    private static final String EMAIL_PATTERN = "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}";
+    private static final Pattern pattern = Pattern.compile(EMAIL_PATTERN);
+
     interface ContactApi {
         @POST("/contact-form/")
         Call<String> submitContactForm(@Body ContactRequest contactRequest);
@@ -42,8 +49,6 @@ public class FormActivity extends AppCompatActivity {
         emailEditText = findViewById(R.id.emailEditText);
         notesEditText = findViewById(R.id.notesEditText);
         buttonSubmit = findViewById(R.id.submitButton);
-
-        // Set up Gson with lenient mode
         Gson gson = new GsonBuilder().setLenient().create();
 
         // Set up logging interceptor for debugging
@@ -74,8 +79,15 @@ public class FormActivity extends AppCompatActivity {
         String email = emailEditText.getText().toString().trim();
         String notes = notesEditText.getText().toString().trim();
 
+        // Check if any field is empty
         if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || notes.isEmpty()) {
             Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Validate email format
+        if (!isValidEmail(email)) {
+            emailEditText.setError("Please enter a valid email address");
             return;
         }
 
@@ -92,7 +104,6 @@ public class FormActivity extends AppCompatActivity {
 
                     // Optionally, finish this activity so it cannot be navigated back to
                     finish();
-
                 } else {
                     Toast.makeText(FormActivity.this, "Failed to submit form: " + response.message(), Toast.LENGTH_SHORT).show();
                 }
@@ -103,6 +114,10 @@ public class FormActivity extends AppCompatActivity {
                 Toast.makeText(FormActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private boolean isValidEmail(String email) {
+        return pattern.matcher(email).matches();  // Validate the email format
     }
 
     public static class ContactRequest {
